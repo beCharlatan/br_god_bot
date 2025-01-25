@@ -1,6 +1,4 @@
-from services import Preprocessor
-from services.postprocessor import Postprocessor
-from services.analyzer import RequirementsAnalyzer
+from services import Preprocessor, Postprocessor, RequirementsAnalyzer
 
 def main():
     preprocessor = Preprocessor()
