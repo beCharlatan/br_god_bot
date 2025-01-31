@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from config.database import Base
 
 class DocumentEmbedding(Base):
@@ -8,3 +8,4 @@ class DocumentEmbedding(Base):
     filename = Column(String(255))
     content = Column(Text)
     embedding = Column(Text)
+    file_embedding_id = Column(Integer, ForeignKey('file_embeddings.id'))
