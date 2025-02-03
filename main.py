@@ -1,7 +1,8 @@
-from agents.supervisor import graph
+from agents.supervisor import Supervisor
 from langchain_core.messages import HumanMessage
 
 def main():
+    supervisor = Supervisor()
     print("Чат-бот запущен. Введите 'exit' для выхода.")
     messages = []
     config = {"configurable": {"thread_id": "1"}}
@@ -11,9 +12,9 @@ def main():
             user_input = input("\nВы: ")
             if user_input.lower() == 'exit':
                 break
-                
+                    
             messages.append(HumanMessage(content=user_input))
-            response = graph.invoke({"messages": messages}, config)
+            response = supervisor.invoke({"messages": messages}, config)
             
             if response and "messages" in response:
                 messages = response["messages"]
