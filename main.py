@@ -1,5 +1,5 @@
 from agents.supervisor import Supervisor
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 def main():
     supervisor = Supervisor()
@@ -14,12 +14,14 @@ def main():
                 break
                     
             messages.append(HumanMessage(content=user_input))
-            response = supervisor.invoke({"messages": messages}, config)
+            state = supervisor.invoke({"messages": messages}, config)
             
-            if response and "messages" in response:
-                messages = response["messages"]
-                if messages:
-                    print(f"\nБот: {messages[-1].content}")
+            if state and "messages" in state:
+                messages = state["messages"]
+                if messages and len(messages) > 0:
+                    last_message = messages[-1]
+                    if isinstance(last_message, AIMessage):
+                        print(f"\nБот: {last_message.content}")
                     
         except Exception as e:
             print(f"\nОшибка: {str(e)}")
