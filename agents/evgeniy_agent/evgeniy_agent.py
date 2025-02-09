@@ -4,7 +4,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from services.gigachat_service import GigaChatService
 from .tools.find_related_docs import find_related_docs
-from .tools.get_all_brs import get_all_brs
+from .tools.get_documents_names import get_documents_names
 
 class EvgeniyAgent:
     """Agent responsible for answering business requirement questions using the knowledge base."""
@@ -21,7 +21,7 @@ class EvgeniyAgent:
 
 При формировании ответа используй прямые цитаты из базы знаний.
         """
-        self.tools = [find_related_docs, get_all_brs]
+        self.tools = [find_related_docs, get_documents_names]
         self.model = GigaChatService().get_client()
         self.agent = self._create_agent()
         

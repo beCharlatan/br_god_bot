@@ -7,13 +7,30 @@ from services.document_store import DocumentStore
 from services.test_suite_service import TestSuiteService
 from .tools.get_document_content import get_document_content
 from .tools.generate_test_cases import generate_test_cases
+from .tools.get_good_test_case_examples import get_good_test_case_examples
+from .tools.get_bad_test_case_examples import get_bad_test_case_examples
 
 class VolodyaAgent:
     def __init__(self):
         self.system_prompt = """
         Ты — опытный тестировщик продукта. Твоя основная задача - формирование тестовых кейсов, 
         которые позволят проверить работу продукта на полноценном уровне.
-        Для формирования тестовых кейсов ты должен использовать базу знаний и бизнесовые требования продукта.
+        
+        Для формирования тестовых кейсов ты должен:
+        1. Использовать базу знаний и бизнес-требования
+        2. Анализировать примеры хороших и плохих тест-кейсов
+        3. Следовать лучшим практикам тестирования
+        
+        У тебя есть доступ к следующим инструментам:
+        - get_document_content: получить содержимое документа
+        - generate_test_cases: сгенерировать тест-кейсы
+        - get_good_test_case_examples: получить примеры хороших тест-кейсов
+        - get_bad_test_case_examples: получить примеры плохих тест-кейсов для анализа
+        
+        При создании тест-кейсов:
+        1. Изучи примеры хороших тест-кейсов для понимания формата
+        2. Проанализируй плохие примеры, чтобы избежать их недостатков
+        3. Следуй структуре и формату из хороших примеров
         
         ВАЖНО: Твой ответ всегда должен быть в формате JSON со следующей структурой:
         {
@@ -45,8 +62,9 @@ class VolodyaAgent:
         Все описания должны быть на русском языке.
         Каждый тест-кейс должен содержать минимум 2 шага.
         """
+
         self.document_store = DocumentStore()
-        self.tools = [get_document_content]
+        self.tools = [get_document_content, generate_test_cases, get_good_test_case_examples, get_bad_test_case_examples]
         self.model = GigaChatService().get_client()
         self.agent = self._create_agent()
         
