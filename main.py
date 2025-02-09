@@ -1,17 +1,34 @@
-from services import Preprocessor, Postprocessor, RequirementsAnalyzer
+from agents.supervisor import Supervisor
+from langchain_core.messages import HumanMessage, AIMessage
 
 def main():
-    preprocessor = Preprocessor()
-    analyzer = RequirementsAnalyzer()
-    postprocessor = Postprocessor()
+    supervisor = Supervisor()
+    print("Чат-бот запущен. Введите 'exit' для выхода.")
+    messages = []
+    config = {"configurable": {"thread_id": "1"}}
     
-    args = preprocessor.parse_arguments()
-    content = preprocessor.read_requirements_file(args.input_file)
+    while True:
+        try:
+            user_input = input("\nВы: ")
+            if user_input.lower() == 'exit':
+                break
+                    
+            messages.append(HumanMessage(content=user_input))
+            state = supervisor.invoke({"messages": messages}, config)
+
+            print(state, 'state')
+            
+            if state and "messages" in state:
+                messages = state["messages"]
+                if messages and len(messages) > 0:
+                    last_message = messages[-1]
+                    if isinstance(last_message, AIMessage):
+                        print(f"\nБот: {last_message.content}")
+                    
+        except Exception as e:
+            print(f"\nОшибка: {str(e)}")
     
-    test_suite = analyzer.analyze_requirements(content)
-    
-    output_path = postprocessor.generate_output_path(args.input_file)
-    postprocessor.save_test_cases(test_suite, output_path)
+    print("\nЧат завершен. До свидания!")
 
 if __name__ == "__main__":
     main()
