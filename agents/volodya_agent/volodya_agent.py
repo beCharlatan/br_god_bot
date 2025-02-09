@@ -1,12 +1,12 @@
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any
 from langchain_core.messages import AnyMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
-from domain.test_suite import TestSuite
 from services.gigachat_service import GigaChatService
 from services.document_store import DocumentStore
+from services.test_suite_service import TestSuiteService
 from .tools.get_document_content import get_document_content
-import json
+from .tools.generate_test_cases import generate_test_cases
 
 class VolodyaAgent:
     def __init__(self):
@@ -14,7 +14,36 @@ class VolodyaAgent:
         Ты — опытный тестировщик продукта. Твоя основная задача - формирование тестовых кейсов, 
         которые позволят проверить работу продукта на полноценном уровне.
         Для формирования тестовых кейсов ты должен использовать базу знаний и бизнесовые требования продукта.
-        Для того, что сформировать тестовые кейсы, ты должен узнать у пользователя по каким бизнесовым требованиям формировать тестовые кейсы.
+        
+        ВАЖНО: Твой ответ всегда должен быть в формате JSON со следующей структурой:
+        {
+            "user_cases": [
+                {
+                    "id": "UC001",  // Формат: UC### где ### - порядковый номер
+                    "title": "Название пользовательского кейса",
+                    "description": "Детальное описание пользовательского кейса",
+                    "test_cases": [
+                        {
+                            "id": "TC001",  // Формат: TC### где ### - порядковый номер
+                            "title": "Название тест-кейса",
+                            "description": "Детальное описание тест-кейса",
+                            "steps": [
+                                {
+                                    "step_number": 1,
+                                    "description": "Описание шага",
+                                    "expected_result": "Ожидаемый результат"
+                                }
+                            ],
+                            "expected_outcome": "Общий ожидаемый результат тест-кейса",
+                            "user_case_id": "UC001"  // ID родительского пользовательского кейса
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        Все описания должны быть на русском языке.
+        Каждый тест-кейс должен содержать минимум 2 шага.
         """
         self.document_store = DocumentStore()
         self.tools = [get_document_content]
@@ -29,40 +58,6 @@ class VolodyaAgent:
             checkpointer=MemorySaver(),
             state_modifier=self.system_prompt
         )
-    
-    def _parse_json_response(self, text: str) -> Union[Dict, None]:
-        """Try to extract and parse JSON from the response text.
-
-        Args:
-            text: Response text that might contain JSON
-
-        Returns:
-            Dict if JSON found and parsed, None otherwise
-        """
-        try:
-            # Find JSON-like structure in the text
-            start = text.find('{')
-            end = text.rfind('}')
-            if start != -1 and end != -1:
-                json_str = text[start:end + 1]
-                return json.loads(json_str)
-            return None
-        except json.JSONDecodeError:
-            return None
-
-    def _create_test_suite(self, data: Dict) -> Union[TestSuite, None]:
-        """Create TestSuite object from parsed JSON data.
-
-        Args:
-            data: Dictionary containing test suite data
-
-        Returns:
-            TestSuite object if valid, None otherwise
-        """
-        try:
-            return TestSuite.parse_obj(data)
-        except Exception:
-            return None
 
     def invoke(self, messages: List[AnyMessage], config: Dict[str, Any] = None) -> Dict[str, Any]:
         """Process user messages and provide answers based on the knowledge base.
@@ -78,13 +73,29 @@ class VolodyaAgent:
             config = {"configurable": {"thread_id": 'VolodyaAgent'}}
 
         response = self.agent.invoke({"messages": messages}, config=config)
-        
-        # Try to parse the last message as JSON
-        if isinstance(response["messages"][-1], AIMessage):
-            json_data = self._parse_json_response(response['output'].content)
-            if json_data:
-                test_suite = self._create_test_suite(json_data)
-                if test_suite:
-                    response['test_suite'] = test_suite
+
+        if isinstance(response['messages'][-1], AIMessage):
+            try:
+                # Generate and validate test cases
+                content = response['messages'][-1].content
+                test_data = generate_test_cases(content)
+                
+                # Save to database
+                db_test_suite, stats = TestSuiteService.save_test_suite(test_data)
+                
+                # Add success message
+                response['messages'].append(AIMessage(
+                    content=f"Тест-кейсы успешно сгенерированы и сохранены в базу данных:\n" + 
+                            f"- Создан тест-сьют (ID: {db_test_suite.id})\n" + 
+                            f"- Добавлено пользовательских кейсов: {stats['user_cases_count']}\n" + 
+                            f"- Общее количество тест-кейсов: {stats['test_cases_count']}\n"
+                ))
+                
+                response['test_suite'] = test_data
+                
+            except Exception as e:
+                error_msg = f"Ошибка при сохранении тест-кейсов: {str(e)}"
+                print(error_msg)
+                response['messages'].append(AIMessage(content=error_msg))
         
         return response

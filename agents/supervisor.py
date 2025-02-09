@@ -28,12 +28,16 @@ class Supervisor:
         self.system_prompt = (
             "You are a team manager responsible for routing user requests to appropriate agents. "
             "Analyze the request and conversation history to select the most appropriate agent."
-            "\n\nAvailable agents:\n"
-            f"1. Evgeniy - {self.evgeniy_agent.system_prompt}\n"
-            f"2. Upload - {self.upload_agent.system_prompt}\n"
-            f"3. Volodya - {self.volodya_agent.system_prompt}\n"
+            "\n\nAvailable agents and their responsibilities:\n"
+            "1. Evgeniy - General purpose agent for basic interactions\n"
+            "2. Upload - ONLY for initial document parsing and uploading to knowledge base. Route here ONLY when user explicitly wants to upload/parse a new document.\n"
+            "3. Volodya - Test case generator. Route here when user wants to generate test cases OR when they mention a file path in context of testing/test cases.\n"
+            "\nRouting rules:\n"
+            "1. If user mentions a file path AND wants to generate test cases or analyze requirements - route to Volodya\n"
+            "2. If user mentions a file path AND explicitly wants to upload/parse it to knowledge base - route to Upload\n"
+            "3. For general queries - route to Evgeniy\n"
             "\nWhen all work is complete or when receiving a message from an agent, return FINISH."
-            f"Return on of {self.options}"
+            f"\n\nReturn one of: {self.options}"
         )
         
         self.llm = GigaChatService().get_client()
@@ -41,11 +45,14 @@ class Supervisor:
 
     def _build_graph(self):
         builder = StateGraph(State)
+
         builder.add_node("supervisor", self.supervisor_node)
         builder.add_node("evgeniy", self.evgeniy_node)
         builder.add_node("upload", self.upload_node)
         builder.add_node("volodya", self.volodya_node)
+
         builder.add_edge(START, "supervisor")
+        
         return builder.compile(checkpointer=MemorySaver())
 
     def supervisor_node(self, state: State) -> Command[Literal["supervisor", "evgeniy", "upload", "volodya"]]:
@@ -66,6 +73,8 @@ class Supervisor:
         goto = response['next']
         if goto == "FINISH":
             goto = END
+
+        print(goto, 'goto')
 
         return Command(goto=goto, update={"next": goto})
 

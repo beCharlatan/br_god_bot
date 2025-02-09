@@ -15,6 +15,8 @@ def main():
                     
             messages.append(HumanMessage(content=user_input))
             state = supervisor.invoke({"messages": messages}, config)
+
+            print(state, 'state')
             
             if state and "messages" in state:
                 messages = state["messages"]
