@@ -10,8 +10,8 @@ class DocumentEmbedder:
         self.embeddings = GigaChatEmbeddings()
         self.text_splitter = CharacterTextSplitter(
             separator="\n",
-            chunk_size=1500,
-            chunk_overlap=200,
+            chunk_size=300,
+            chunk_overlap=50,
             length_function=len,
             is_separator_regex=False
         )

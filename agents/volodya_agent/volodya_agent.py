@@ -15,22 +15,27 @@ class VolodyaAgent:
         self.system_prompt = """
         Ты — опытный тестировщик продукта. Твоя основная задача - формирование тестовых кейсов, 
         которые позволят проверить работу продукта на полноценном уровне.
+
+        Важно: Перед формированием тест-кейсов тебе нужно получить следующую информацию от пользователя:
+        1. Наименование требований, по которым формировать тест-кейсы
         
         Для формирования тестовых кейсов ты должен:
         1. Использовать базу знаний и бизнес-требования
         2. Анализировать примеры хороших и плохих тест-кейсов
         3. Следовать лучшим практикам тестирования
-        
-        У тебя есть доступ к следующим инструментам:
-        - get_document_content: получить содержимое документа
-        - generate_test_cases: сгенерировать тест-кейсы
-        - get_good_test_case_examples: получить примеры хороших тест-кейсов
-        - get_bad_test_case_examples: получить примеры плохих тест-кейсов для анализа
-        
+
         При создании тест-кейсов:
         1. Изучи примеры хороших тест-кейсов для понимания формата
         2. Проанализируй плохие примеры, чтобы избежать их недостатков
         3. Следуй структуре и формату из хороших примеров
+        4. Все описания должны быть на русском языке.
+        5. Каждый тест-кейс должен содержать минимум 2 шага.
+        
+        У тебя есть доступ к следующим инструментам:
+        - get_document_content: получить содержимое документа по наименованию
+        - generate_test_cases: сгенерировать тест-кейсы
+        - get_good_test_case_examples: получить примеры хороших тест-кейсов
+        - get_bad_test_case_examples: получить примеры плохих тест-кейсов для анализа
         
         ВАЖНО: Твой ответ всегда должен быть в формате JSON со следующей структурой:
         {
@@ -58,9 +63,6 @@ class VolodyaAgent:
                 }
             ]
         }
-        
-        Все описания должны быть на русском языке.
-        Каждый тест-кейс должен содержать минимум 2 шага.
         """
 
         self.document_store = DocumentStore()
@@ -92,28 +94,28 @@ class VolodyaAgent:
 
         response = self.agent.invoke({"messages": messages}, config=config)
 
-        if isinstance(response['messages'][-1], AIMessage):
-            try:
-                # Generate and validate test cases
-                content = response['messages'][-1].content
-                test_data = generate_test_cases(content)
+        # if isinstance(response['messages'][-1], AIMessage):
+        #     try:
+        #         # Generate and validate test cases
+        #         content = response['messages'][-1].content
+        #         test_data = generate_test_cases(content)
                 
-                # Save to database
-                db_test_suite, stats = TestSuiteService.save_test_suite(test_data)
+        #         # Save to database
+        #         db_test_suite, stats = TestSuiteService.save_test_suite(test_data)
                 
-                # Add success message
-                response['messages'].append(AIMessage(
-                    content=f"Тест-кейсы успешно сгенерированы и сохранены в базу данных:\n" + 
-                            f"- Создан тест-сьют (ID: {db_test_suite.id})\n" + 
-                            f"- Добавлено пользовательских кейсов: {stats['user_cases_count']}\n" + 
-                            f"- Общее количество тест-кейсов: {stats['test_cases_count']}\n"
-                ))
+        #         # Add success message
+        #         response['messages'].append(AIMessage(
+        #             content=f"Тест-кейсы успешно сгенерированы и сохранены в базу данных:\n" + 
+        #                     f"- Создан тест-сьют (ID: {db_test_suite.id})\n" + 
+        #                     f"- Добавлено пользовательских кейсов: {stats['user_cases_count']}\n" + 
+        #                     f"- Общее количество тест-кейсов: {stats['test_cases_count']}\n"
+        #         ))
                 
-                response['test_suite'] = test_data
+        #         response['test_suite'] = test_data
                 
-            except Exception as e:
-                error_msg = f"Ошибка при сохранении тест-кейсов: {str(e)}"
-                print(error_msg)
-                response['messages'].append(AIMessage(content=error_msg))
+        #     except Exception as e:
+        #         error_msg = f"Ошибка при сохранении тест-кейсов: {str(e)}"
+        #         print(error_msg)
+        #         response['messages'].append(AIMessage(content=error_msg))
         
         return response
