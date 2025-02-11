@@ -35,7 +35,7 @@ env/
 *.swo
 
 # Documents
-documents/
+./documents/
 *.doc
 *.docx
 *.pdf

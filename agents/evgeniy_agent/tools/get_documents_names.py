@@ -1,39 +1,48 @@
 from langchain.tools import tool
-from services.document_store import DocumentStore
+from services.documents.document_meta_service import DocumentMetaService
 from typing import List
 
 
 @tool
-def get_documents_names() -> List[str]:
+def get_documents_names() -> List[tuple[str, str | None, str | None]]:
     """
-    Получает все бизнес-требования (БТ) из хранилища документов для операций ИИ-агента
+    Инструмент для получения метаданных всех документов в базе знаний продукта.
+    
+    Этот инструмент интегрируется с хранилищем документов и извлекает
+    метаданные всех документов, доступных для поиска и анализа. Он полезен для
+    определения доступных источников информации, их расположения в Confluence
+    и проверки покрытия требований.
 
-    Интерфейс:
-        Входные данные: Отсутствуют
-        Выходные данные: Список имён файлов БТ
-
-    Ключевые особенности:
-        - Прямая интеграция с сервисом DocumentStore
-        - Возвращает оригинальные имена файлов для отслеживания
-        - Совместим с экосистемой инструментов LangChain
-
-    Использование:
-        Когда ИИ-агенту необходимо:
-        1. Проверить покрытие требований
-        2. Перекрестно-ссылаться на функции с БТ
-        3. Генерировать содержимое на основе требований
-
-    Пример использования агента:
-        br_list = get_documents_names()
-        for br in br_list:
-            analyze_requirement(br)
+    Параметры:
+        Нет входных параметров. Инструмент автоматически обращается к
+        хранилищу документов для получения данных.
 
     Возвращает:
-        List[str]: Имена файлов БТ в формате 'BR_<feature>_<version>.<ext>'
+        List[tuple[str, str | None, str | None]]: Список кортежей, где каждый кортеж содержит:
+            - str: Название документа
+            - str | None: Ссылка на документ бизнес-анализа в Confluence (или None)
+            - str | None: Ссылка на документ системного анализа в Confluence (или None)
+
+    Использование:
+        1. Определение всех доступных документов для поиска информации.
+        2. Получение ссылок на документы в Confluence для перехода к первоисточнику.
+        3. Определение связей между бизнес и системными требованиями.
+        4. Генерация содержимого на основе требований.
+
+    Примеры использования:
+        >>> get_documents_names()
+        [('Красная кнопка', 'https://confluence.../br-doc', None),
+         ('Архитектура системы', None, 'https://confluence.../sa-doc')]
+
+    Ограничения:
+        - Возвращает только метаданные документов, а не их содержимое.
+        - Требует корректной настройки связей между документами в базе данных.
+        - Зависит от доступности и актуальности данных в хранилище.
     """
+
     # Log agent tool activation
     print(f'[BR Agent] Fetching all business requirements')
 
     # Access document storage service
-    document_embedder = DocumentStore()
-    return [doc.original_filename for doc in document_embedder.get_all_documents()]
+    document_meta_service = DocumentMetaService()
+    return [(doc.title, doc.ba_document_confluence_link, doc.sa_document_confluence_link) for doc in document_meta_service.get_all_documents()]
