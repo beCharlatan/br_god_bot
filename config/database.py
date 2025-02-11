@@ -43,11 +43,3 @@ class Database:
             db.close()
 
 db = Database()
-
-
-# from config.database import db
-
-# db.create_tables()
-
-# for session in db.get_db():
-#     pass
