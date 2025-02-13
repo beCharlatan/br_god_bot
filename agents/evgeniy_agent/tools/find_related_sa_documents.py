@@ -43,4 +43,4 @@ def find_related_sa_documents(query: str) -> List[Dict]:
     print(f'bot requested find_related_sa_docs with query {query}')
 
     document_embedder = SADocumentEmbedder()
-    return document_embedder.find_similar_sa_documents(query, limit=5)
+    return document_embedder.find_similar_sa_documents(query)

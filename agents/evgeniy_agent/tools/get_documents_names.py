@@ -41,7 +41,7 @@ def get_documents_names() -> List[tuple[str, str | None, str | None]]:
     """
 
     # Log agent tool activation
-    print(f'[BR Agent] Fetching all business requirements')
+    print('[BR Agent] Fetching all business requirements')
 
     # Access document storage service
     document_meta_service = DocumentMetaService()

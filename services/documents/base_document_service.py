@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 
 T = TypeVar('T')
 
+# FIXME: то, что я сделал - это незаконнно, этот класс не должен просить методы энкодинга 
 class BaseDocumentService(Generic[T], ABC):
     def __init__(self, model_class: Type[T]):
         self.model_class = model_class

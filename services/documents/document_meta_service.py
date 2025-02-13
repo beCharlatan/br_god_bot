@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from domain.models.documents_meta import DocumentMeta
 from services.documents.base_document_service import BaseDocumentService
+from sqlalchemy.orm import Session
 
 class DocumentMetaService(BaseDocumentService[DocumentMeta]):
     def __init__(self):
@@ -35,3 +36,9 @@ class DocumentMetaService(BaseDocumentService[DocumentMeta]):
         except Exception as e:
             print(f"Error fetching document by title: {str(e)}")
             return None
+
+    def _bi_encoder_retrieval(self, query_embedding: List[float], query_text: str, session: Session) -> List[Dict]:
+        pass
+
+    def _cross_encoder_reranking(self, candidates: List[Dict], query_text: str, limit: int) -> List[Dict]:
+        pass

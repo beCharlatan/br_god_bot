@@ -75,5 +75,4 @@ def find_related_ba_documents(query: str) -> List[Dict]:
     print(f'bot requested find_related_ba_documents with query {query}')
 
     document_embedder = BADocumentEmbedder()
-    print(document_embedder.find_similar_ba_documents(query, limit=5), 'data')
-    return document_embedder.find_similar_ba_documents(query, limit=5)
+    return document_embedder.find_similar_ba_documents(query)

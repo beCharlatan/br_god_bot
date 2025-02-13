@@ -12,6 +12,7 @@ class State(TypedDict):
     summary: Optional[str]  # Current conversation summary
     memory: Dict[str, Any]  # Memory state
     routing_decision: Optional[str]  # Routing decision from grade_documents node
+    request_type: Optional[str]  # Request classification (analyze/skip_analysis)
 
 
 class ConversationManager:
