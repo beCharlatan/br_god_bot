@@ -2,6 +2,7 @@ from typing import List, Dict, TypeVar, Generic
 from langchain_text_splitters import CharacterTextSplitter
 from services.embeddings.gigachat_embeddings import GigaChatEmbeddings
 from services.documents.base_document_service import BaseDocumentService
+from concurrent.futures import ThreadPoolExecutor
 
 T = TypeVar('T')
 
@@ -22,10 +23,14 @@ class BaseDocumentEmbedder(Generic[T]):
         chunks = self.text_splitter.split_text(content)
         
         chunk_embeddings = []
-        for chunk in chunks:
+        
+        def process_chunk(chunk):
             chunk_embedding = self.embeddings.create_embedding(chunk)
             self.document_service.store_document_embedding(chunk, chunk_embedding, document_meta_id)
-            chunk_embeddings.append(chunk_embedding)
+            return chunk_embedding
+        
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            chunk_embeddings = list(executor.map(process_chunk, chunks))
         
         return chunk_embeddings[0] if chunk_embeddings else []
     

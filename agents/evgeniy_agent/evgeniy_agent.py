@@ -53,7 +53,7 @@ class EvgeniyAgent:
         """Process user messages and provide answers based on the knowledge base.
         
         Args:
-            state: Dictionary containing messages list
+            state: Dictionary containing messages list and conversation summary
             config: Optional configuration parameters
             
         Returns:
@@ -61,5 +61,32 @@ class EvgeniyAgent:
         """
         if config is None:
             config = {"configurable": {"thread_id": 'EvgeniyAgent'}}
+
+        # Add conversation summary to the system prompt if available
+        current_prompt = self.system_prompt
+        if state.get("summary"):
+            current_prompt += """
+
+Контекст предыдущей беседы:
+{}
+
+Используйте этот контекст для более точных и контекстно-зависимых ответов.""".format(state["summary"])
             
-        return self.agent.invoke(state, config=config)
+        # Update the agent with the current prompt
+        self.agent = create_react_agent(
+            self.model,
+            tools=self.tools,
+            checkpointer=MemorySaver(),
+            state_modifier=current_prompt
+        )
+            
+        # Get response from agent
+        response = self.agent.invoke(state, config=config)
+        
+        # Preserve routing_decision field if it exists
+        if "routing_decision" in state:
+            response["routing_decision"] = state["routing_decision"]
+        else:
+            response["routing_decision"] = None
+            
+        return response

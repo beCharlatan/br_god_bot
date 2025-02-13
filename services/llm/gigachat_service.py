@@ -21,7 +21,7 @@ class GigaChatService:
             scope="GIGACHAT_API_PERS",
             model="GigaChat",
             verify_ssl_certs=False,
-            temperature=0.2
+            temperature=0
         )
     
     def get_client(self) -> GigaChat:

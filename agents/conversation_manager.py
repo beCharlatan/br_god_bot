@@ -11,6 +11,7 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]  # Conversation messages
     summary: Optional[str]  # Current conversation summary
     memory: Dict[str, Any]  # Memory state
+    routing_decision: Optional[str]  # Routing decision from grade_documents node
 
 
 class ConversationManager:
