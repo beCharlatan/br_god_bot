@@ -1,5 +1,5 @@
 import os
-from gigachat import GigaChat
+from langchain_gigachat.chat_models.gigachat import GigaChat
 
 class GigaChatService:
     _instance = None
@@ -18,7 +18,10 @@ class GigaChatService:
         
         self.client = GigaChat(
             credentials=credentials,
-            verify_ssl_certs=False
+            scope="GIGACHAT_API_PERS",
+            model="GigaChat",
+            verify_ssl_certs=False,
+            temperature=0
         )
     
     def get_client(self) -> GigaChat:
