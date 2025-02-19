@@ -25,7 +25,7 @@ class BADocumentService(BaseDocumentService[BADocumentEmbedding]):
         from sqlalchemy import text
         # Join с таблицей метаданных для получения ссылки на confluence
         documents = session.query(self.model_class, text('documents_meta.ba_document_confluence_link')).\
-            join('document_meta').all()
+            join(BADocumentEmbedding.document_meta).all()
         if not documents:
             print("Warning: No BA documents found in the database")
             return []

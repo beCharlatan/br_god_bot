@@ -1,61 +1,51 @@
-from fastapi import FastAPI, UploadFile, Form, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from scripts.load_ba_document import BADocumentLoader
-from scripts.load_sa_document import SADocumentLoader
-import tempfile
-import os
+from fastapi import UploadFile, Form
+from .app import app
+from .models.document import DocumentUploadResponse
+from .services.document_service import DocumentService
 
-# uvicorn api.document_loader_api:app --reload
-app = FastAPI()
+# Инициализация сервиса
+document_service = DocumentService()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+from fastapi import status
+
+@app.post(
+    "/upload/ba-document",
+    response_model=DocumentUploadResponse,
+    tags=["documents"],
+    summary="Загрузить BA документ",
+    description="""Загружает и обрабатывает BA документ в формате .docx.
+    
+Процесс обработки:
+* Загрузка документа
+* Извлечение текста
+* Создание векторных представлений
+* Сохранение в базе данных
+    """,
+    status_code=status.HTTP_200_OK
 )
-
-@app.post("/upload/ba-document")
 async def upload_ba_document(
     file: UploadFile,
     confluence_link: str = Form(...)
-):
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_file_path = temp_file.name
+) -> DocumentUploadResponse:
+    return await document_service.process_ba_document(file, confluence_link)
 
-        try:
-            loader = BADocumentLoader()
-            loader.load_document(temp_file_path, confluence_link)
-            
-            return {"status": "success", "message": "BA document uploaded and processed successfully"}
-        finally:
-            os.unlink(temp_file_path)
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/upload/sa-document")
+@app.post(
+    "/upload/sa-document",
+    response_model=DocumentUploadResponse,
+    tags=["documents"],
+    summary="Загрузить SA документ",
+    description="""Загружает и обрабатывает SA документ в формате .docx.
+    
+Процесс обработки:
+* Загрузка документа
+* Извлечение текста
+* Создание векторных представлений
+* Сохранение в базе данных
+    """,
+    status_code=status.HTTP_200_OK
+)
 async def upload_sa_document(
     file: UploadFile,
     confluence_link: str = Form(...)
-):
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_file_path = temp_file.name
-
-        try:
-            loader = SADocumentLoader()
-            loader.load_document(temp_file_path, confluence_link)
-            
-            return {"status": "success", "message": "SA document uploaded and processed successfully"}
-        finally:
-            os.unlink(temp_file_path)
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+) -> DocumentUploadResponse:
+    return await document_service.process_sa_document(file, confluence_link)

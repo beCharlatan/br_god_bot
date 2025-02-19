@@ -35,9 +35,14 @@ class ConversationManager:
         
         # Add the message to memory
         if isinstance(latest_message, HumanMessage):
-            previous_message = state["messages"][-2].content if len(state["messages"]) > 1 else ""
+            previous_message = ""
+            if len(state["messages"]) > 1:
+                prev = state["messages"][-2]
+                previous_message = prev.content if hasattr(prev, 'content') else str(prev)
+            
+            input_message = latest_message.content if hasattr(latest_message, 'content') else str(latest_message)
             self.memory.save_context(
-                {"input": latest_message.content},
+                {"input": input_message},
                 {"output": previous_message}
             )
         
